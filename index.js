@@ -1,0 +1,116 @@
+const express = require('express');
+const app = express();
+
+// Middleware to parse JSON bodies
+app.use(express.json());
+
+// Hardcoded phonebook entries
+let phonebookEntries = [
+    { 
+        "id": 1,
+        "name": "Arto Hellas", 
+        "number": "040-123456"
+    },
+    { 
+        "id": 2,
+        "name": "Ada Lovelace", 
+        "number": "39-44-5323523"
+    },
+    { 
+        "id": 3,
+        "name": "Dan Abramov", 
+        "number": "12-43-234345"
+    },
+    { 
+        "id": 4,
+        "name": "Mary Poppendieck", 
+        "number": "39-23-6423122"
+    }
+];
+
+// Route to handle GET requests to the root path
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+});
+
+// Route to handle GET requests to "/api/persons"
+app.get('/api/persons', (req, res) => {
+    res.json(phonebookEntries);
+});
+
+// Route to handle GET requests to "/api/persons/:id"
+app.get('/api/persons/:id', (req, res) => {
+    const id = Number(req.params.id);
+    const entry = phonebookEntries.find(entry => entry.id === id);
+
+    if (entry) {
+        res.json(entry);
+    } else {
+        res.status(404).end();
+    }
+});
+
+// Route to handle GET requests to "/info"
+app.get('/info', (req, res) => {
+    // Get the current date and time
+    const currentTime = new Date();
+    // Get the number of entries in the phonebook
+    const numEntries = phonebookEntries.length;
+    // Generate the HTML content for the page
+    const htmlContent = `
+        <div>
+            <p>Phonebook has info for ${numEntries} people</p>
+            <p>${currentTime}</p>
+        </div>
+    `;
+    // Send the HTML content as the response to the client
+    res.send(htmlContent);
+});
+
+// Route to handle POST requests to "/api/persons"
+app.post('/api/persons', (req, res) => {
+    const body = req.body;
+    if (!body.name || !body.number) {
+        return res.status(400).json({ error: 'Name or number missing' });
+    }
+    const nameExists = phonebookEntries.some(entry => entry.name === body.name);
+    if (nameExists) {
+        return res.status(400).json({ error: 'Name must be unique' });
+    }
+    const newEntry = {
+        id: phonebookEntries.length + 1, // Generate ID based on length of phonebookEntries
+        name: body.name,
+        number: body.number
+    };
+    phonebookEntries.push(newEntry);
+    res.json(newEntry);
+});
+
+// Route to handle DELETE requests to "/api/persons/:id"
+app.delete('/api/persons/:id', (req, res) => {
+    const id = Number(req.params.id);
+    const initialLength = phonebookEntries.length;
+    phonebookEntries = phonebookEntries.filter(entry => entry.id !== id);
+
+    if (initialLength === phonebookEntries.length) {
+        // No entry was deleted
+        res.status(404).json({ error: 'Entry not found' });
+    } else {
+        // Entry was successfully deleted
+        res.status(204).end();
+    }
+});
+
+// Start the server
+const PORT = 3001;
+const server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+// Close the server when the Node.js process is terminated
+process.on('SIGINT', () => {
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
