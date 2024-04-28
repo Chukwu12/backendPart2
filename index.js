@@ -1,5 +1,10 @@
 const express = require('express');
 const app = express();
+const morgan = require('morgan');
+
+
+// Configure Morgan middleware to log messages to the console
+app.use(morgan('tiny'));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -100,6 +105,12 @@ app.delete('/api/persons/:id', (req, res) => {
         res.status(204).end();
     }
 });
+
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+  }
+  
+  app.use(unknownEndpoint)
 
 // Start the server
 const PORT = 3001;
